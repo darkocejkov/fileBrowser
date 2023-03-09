@@ -1,15 +1,21 @@
-const express = require("express");
+const express = require('express')
+const cors = require("cors");
 
-const PORT = process.env.PORT || 3001;
+const app = express()
+const port = 3001
 
-const app = express();
+app.get('/', (req, res, next) => {
+    res.send('root')
+})
 
-app.get("/api", (req, res) => {
-    res.json({ message: "Hello from server!" });
-});
+app.get('/api', (req, res) => {
+    res.send({msg: 'hi!'})
+})
 
+app.get('/api/test/:id', (req, res, next) => {
+    res.status(200).send('received id ' + req.params.id)
+})
 
-
-app.listen(PORT, () => {
-    console.log(`Server listening on ${PORT}`);
-});
+app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+})
