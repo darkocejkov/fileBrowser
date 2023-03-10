@@ -115,6 +115,23 @@ export default function App() {
         setImages(totalRandom)
     }
 
+    const endpoint = (dir) => {
+        axios.get(dir)
+            .then(data => {
+                console.log(`[endpoint] ${dir} DATA`, data)
+
+            })
+            .catch(err => {
+                console.log(`[endpoint] ${dir} ERR`, err)
+
+            })
+    }
+
+    const requestManifest = (dir) => {
+        endpoint(`/manifest/${dir}`)
+    }
+
+
       return(
           <div className={'min-h-screen w-screen overflow-x-clip bg-sky-200 flex justify-center items-center'}>
               <div className={'container flex flex-col gap-5 '}>
@@ -127,8 +144,11 @@ export default function App() {
                       <button type={'button'} className={'bg-orange-400/70 hover:bg-orange-400/100 transition-all p-2 rounded-xl'} onClick={() => requestVideo('')}>
                           Get Videos
                       </button>
-                  </div>
 
+                      <button type={'button'} className={'bg-orange-400/70 hover:bg-orange-400/100 transition-all p-2 rounded-xl'} onClick={() => requestManifest(path)}>
+                          Get Manifest
+                      </button>
+                  </div>
 
                   {bg &&
                     <img src={bg} className={'fixed top-0 left-0 object-cover object-center w-screen opacity-50'}/>
@@ -141,7 +161,7 @@ export default function App() {
 
                   {images &&
                       <div className={'flex justify-center gap-5 w-full'}>
-                          <button onClick={() => shuffleImages()} className={'bg-orange-400/70 hover:bg-orange-400/100 transition-all p-2 rounded-xl'}>
+               1           <button onClick={() => shuffleImages()} className={'bg-orange-400/70 hover:bg-orange-400/100 transition-all p-2 rounded-xl'}>
                               Shuffle Images
                           </button>
                       </div>
