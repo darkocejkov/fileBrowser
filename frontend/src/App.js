@@ -6,8 +6,16 @@ import axios from "axios";
 import {genKey, get, getRandomInt, shuffle, stripString} from "./globalFunctions";
 import Plyr from "plyr";
 import {DirectoryList} from "./components/directories";
-import {Button, Input, Select, Spin, Empty, Tree, notification} from "antd";
-import {DownOutlined, FileImageOutlined, FileZipOutlined, FolderOutlined, VideoCameraOutlined, FileUnknownOutlined} from "@ant-design/icons";
+import {Button, Input, Select, Spin, Empty, Tree, notification, Tooltip} from "antd";
+import {
+    DownOutlined,
+    FileImageOutlined,
+    FileZipOutlined,
+    FolderOutlined,
+    VideoCameraOutlined,
+    FileUnknownOutlined,
+    AimOutlined
+} from "@ant-design/icons";
 
 const MAX_SIZE_IMAGES = 100
 const MAX_SIZE_VIDEOS = 10
@@ -96,6 +104,21 @@ export default function App() {
         }
     }, [directory])
 
+    useEffect(() => {
+        console.log('FILES :', manifestFiles)
+
+        if(manifestFiles){
+            countFiles(manifestFiles, (arr) => {
+                console.log('COUNT: ', arr)
+            })
+
+
+            filesPerFolder(manifestFiles, (arr) => {
+                console.log('filesPerFolder: ', arr)
+            })
+        }
+    }, [manifestFiles])
+
 
     useEffect(() => {
         get('/available', (err, data) => {
@@ -119,21 +142,33 @@ export default function App() {
         })
     }, [])
 
-    const directoryTree = useMemo(() => {
 
-        if(manifestDirectories){
+    const [preview, setPreview] = useState(null)
 
+    const previewElement = useMemo(() => {
+
+        let elem = null
+
+        if(preview){
+
+            if(preview.type.includes('image')){
+                elem = <img className={'max-h-[95vh] w-auto object-cover rounded-lg shadow-md'} src={`http://localhost:3001/serve/path/${preview.filePath}`}/>
+            }else if(preview.type.includes('video')){
+                elem = <Video path={preview.filePath} key={preview.fileName}/>
+
+            }
 
         }
 
-        return []
+        console.log('previewElem', {elem})
 
-    }, [manifestDirectories])
+        return elem
 
-
+    }, [preview])
 
     return(
-        <div className={'min-h-screen w-screen overflow-x-clip bg-sky-200 flex flex-col items-center gap-5 p-12'}>
+        // flex flex flex-wrap items-center gap-5
+        <div className={'min-h-screen w-screen overflow-x-clip grid grid-cols-2 bg-sky-200  p-12'}>
 
             <div className={'container p-6 shadow-md h-fit'}>
 
@@ -187,16 +222,18 @@ export default function App() {
 
                     <div>
                         {manifestDirectories &&
-                            <Tree
-                                showLine
-                                switcherIcon={<DownOutlined />}
-                                className={'bg-transparent w-full'}
-                                treeData={manifestDirectories}
-                                fieldNames={{
-                                    title: 'fileName',
-                                    children: 'contents'
-                                }}
-                            />
+                            // <Tree
+                            //     showLine
+                            //     switcherIcon={<DownOutlined />}
+                            //     className={'bg-transparent w-full'}
+                            //     treeData={manifestDirectories}
+                            //     fieldNames={{
+                            //         title: 'fileName',
+                            //         children: 'contents'
+                            //     }}
+                            // />
+
+                            <ListView files={manifestDirectories}/>
                         }
                     </div>
 
@@ -207,29 +244,108 @@ export default function App() {
 
             <div className={'container p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
                 {manifestFiles &&
-                    <ListView files={manifestFiles}/>
+                    <>
+                        <ListView files={manifestFiles} setPreview={setPreview}/>
+
+                        <Graphs />
+                    </>
                 }
             </div>
 
+            <div className={'container p-6 shadow-md flex justify-center items-center'}>
+                {previewElement}
+            </div>
+
+
+
+
+
         </div>
     )
+}
+
+
+const filesPerFolder = (folder, done) => {
+    let details = {
+        dir: '/',
+        types: [],
+        subDir: []
+    }
+
+    if(Array.isArray(folder)){
+
+        folder.forEach(x => {
+
+            if(x.type !== 'directory'){
+                let f = details.types.find(y => y.type === x.type)
+
+                if(f){
+                    f.count += 1
+                }else{
+                    details.types.push({
+                        type: x.type,
+                        count: 1,
+                    })
+                }
+            }else{
+
+                filesPerFolder(x.contents, (deets) => {
+                    deets.dir = x.fileName
+                    details.subDir.push(
+                        deets
+                    )
+                })
+
+
+            }
+
+
+        })
+    }
+
+    return done(details)
 }
 
 const countFiles = (folder, done) => {
 
     let types = []
 
-    if(folder.length === 0) return done(0)
+    const add = (obj, count) => {
+        let f = types.find(y => y.type === obj.type)
 
-    folder.forEach(x => {
-
-        if(x.type === 'directory'){
-            countFiles(x.contents, )
+        if(f){
+            f.count += count
         }else{
-
+            types.push({
+                type: obj.type,
+                count: count,
+            })
         }
+    }
 
-    })
+    if(Array.isArray(folder)){
+        folder.forEach(x => {
+
+            if(x.type === 'directory'){
+                countFiles(x.contents, (arr) => {
+                    console.log('[dir]: ', {dir: x.fileName, arr})
+
+
+
+                    arr.forEach(x => {
+
+                        add(x, x.count)
+                    })
+
+                })
+            }else{
+                add(x, 1)
+            }
+
+        })
+    }
+
+    return done(types)
 
 }
 
@@ -258,12 +374,13 @@ const countFiles = (folder, done) => {
 
  */
 
-const Graphs = ({directories, files}) => {
+const Graphs = ({directories, files = []}) => {
 
     const typeCount = useMemo(() => {
 
-        let types = []
+        // let counts = countFiles(files)
 
+        // console.log('GRAPHS count: ', {counts})
 
 
 
@@ -287,11 +404,21 @@ const Graphs = ({directories, files}) => {
  */
 
 
-const ListView = ({files, canCollapse = false, expanded = false}) => {
+const ListView = ({files, canCollapse = false, expanded = false, setPreview}) => {
 
     const toggle = () => {
         console.log(expanded)
         expanded = !expanded
+    }
+
+    const [selected, setSelected] = useState([])
+
+    const addSelect = () => {
+
+    }
+
+    const removeSelect = () => {
+
     }
 
     // style={{display: (expanded || !canCollapse) ? 'block' : 'none'}}
@@ -305,36 +432,22 @@ const ListView = ({files, canCollapse = false, expanded = false}) => {
                         return(
                             <>
                                 <ListItem fileName={x.fileName} type={'directory'}/>
-                                <ListView files={x.contents} canCollapse={true} expanded={expanded}/>
+                                <ListView files={x.contents} canCollapse={true} expanded={expanded} setPreview={setPreview}/>
                             </>
                         )
                     }
                 }
 
                 return (
-                    <ListItem {...x}/>
+                    <ListItem {...x} setPreview={setPreview} self={x} className={''}/>
                 )
             })}
         </ul>
     )
 }
 
-const ListParent = ({type, fileName}) => {
 
-
-
-    return(
-        <div>
-            <ListItem fileName={fileName} type={'directory'}/>
-        </div>
-    )
-}
-
-const ListLeaf = ({}) => {
-
-}
-
-const ListItem = ({type, fileName, onClick = null}) => {
+const ListItem = ({type, fileName, filePath, onClick = null, stats, setPreview, self, className = ''}) => {
 
     const icon = () => {
 
@@ -352,14 +465,35 @@ const ListItem = ({type, fileName, onClick = null}) => {
 
     }
 
+    const actions = (type) => {
+        if(type === 'directory'){
+            return null
+        }
+
+        return(
+            <>
+
+                <button onClick={() => setPreview(self)}>
+                    <AimOutlined className={'self-center'} />
+                </button>
+
+            </>
+
+        )
+    }
+
 
     return(
 
-        <li className={'px-4 flex gap-2 rounded-xl hover:bg-slate-900/10 w-fit'} onClick={() => onClick && onClick()} key={fileName}>
+        <li className={`px-4 flex gap-2 rounded-xl hover:bg-slate-900/10 w-fit ${className}`} onClick={() => onClick && onClick()} key={fileName}>
 
-            {icon()}
+            <Tooltip title={`created: ${stats?.birthtime} | accessed: ${stats?.atime} | modified: ${stats?.mtime} | size (bytes): ${stats?.size}`}>
+                {icon()}
+            </Tooltip>
 
             <span >{fileName}</span>
+
+            {actions(type)}
 
         </li>
 
@@ -507,29 +641,31 @@ const ImageVideo = () => {
 
 }
 
-const Video = ({filename, path, i}) => {
+const Video = ({path, type}) => {
 
-    const videoRef = useCallback((node) => {
-        console.log(node)
 
-        const player = new Plyr(node)
+    const frame = useMemo(() => {
 
-    }, [])
+        return(
+            <source src={`http://localhost:3001/serve/path/${path}`} type={type}/>
+        )
+
+    }, [path, type])
 
     return(
-        <video ref={videoRef} playsInline controls >
-            <source src={`http://localhost:3001/${path}/${filename}`} type="video/mp4"/>
+        <video playsInline controls >
+            {frame}
         </video>
 
     )
 }
 
-const Image = ({filename, path, setBg}) => {
+const Image = ({filename, path}) => {
     return(
         <div className={'relative group'}>
-            <img className={'w-full object-cover min-h-[30vh] max-h-[30vh] rounded-lg shadow-md'} src={`http://localhost:3001/${path}/${filename}`}/>
+            <img className={'w-full object-cover min-h-[30vh] max-h-[30vh] rounded-lg shadow-md'} src={`http://localhost:3001/serve/path/${path}`}/>
 
-            <img className={'absolute top-0 left-0 opacity-0 group-hover:opacity-100 z-10 transition-all group-hover:scale-[1.5] rounded-xl shadow-2xl'} src={`http://localhost:3001/${path}/${filename}`}/>
+            <img className={'absolute top-0 left-0 opacity-0 group-hover:opacity-100 z-10 transition-all group-hover:scale-[1.2] rounded-xl shadow-2xl'} src={`http://localhost:3001/serve/path/${path}`}/>
 
 
             {/*<div className={'h-full w-full absolute top-0 left-0 bg-slate-900/10 opacity-0 hover:opacity-100 transition-all flex flex-col gap-2 justify-center items-center'}>*/}

@@ -195,8 +195,11 @@ const walkDirectory = (dirPath) => {
 // https://github.com/balena-io-modules/drivelist
 app.get('/available', (req, res, next) => {
 
-
-    // res.json(process.env.AVAILABLE_ROOTS.split(',')
+    if(process.env.AVAILABLE_ROOTS){
+        res.json(process.env.AVAILABLE_ROOTS.split(','))
+    }else{
+        res.json([])
+    }
 })
 
 app.get('/manifest/*', (req, res, next) => {
