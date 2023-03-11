@@ -215,12 +215,59 @@ export default function App() {
     )
 }
 
+const countFiles = (folder, done) => {
+
+    let types = []
+
+    if(folder.length === 0) return done(0)
+
+    folder.forEach(x => {
+
+        if(x.type === 'directory'){
+            countFiles(x.contents, )
+        }else{
+
+        }
+
+    })
+
+}
+
+/*
+    dir
+        dir
+            file
+            dir
+                file
+    dir
+        file
+        dir
+            file
+    dir
+        file
+        file
+        dir
+            file
+            file
+        file
+        file
+        file
+    file
+    file
+    file
+
+ */
+
 const Graphs = ({directories, files}) => {
 
+    const typeCount = useMemo(() => {
 
-    useEffect(() => {
+        let types = []
 
-    }, [directories])
+
+
+
+    }, [files])
 
 
     return null

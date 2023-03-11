@@ -18,8 +18,6 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
     extended: true
 }));
 
-app.use(express.static(process.env.SERVE_STATIC_PATH))
-
 // create middleware function
 app.use('/serve/path/*', (req, res, next) => {
     // req.url = path.basename(req.originalUrl);
@@ -196,7 +194,9 @@ const walkDirectory = (dirPath) => {
 
 // https://github.com/balena-io-modules/drivelist
 app.get('/available', (req, res, next) => {
-    res.json(process.env.AVAILABLE_ROOTS.split(','))
+
+
+    // res.json(process.env.AVAILABLE_ROOTS.split(',')
 })
 
 app.get('/manifest/*', (req, res, next) => {
@@ -207,8 +207,6 @@ app.get('/manifest/*', (req, res, next) => {
     //  2. for each file, figure out what kind of file it is, or whether it is a directory
 
     let filePath = req.params[0]
-
-
 
     fs.stat(filePath, (err, stats) => {
         if(err){
