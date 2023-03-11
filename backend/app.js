@@ -27,28 +27,139 @@ app.use('/serve/path/*', (req, res, next) => {
     express.static(req.params['0'])(req, res, next);
 })
 
-const walk = function(dir, done) {
-    var results = [];
+const walk = function(dir, depth = 0, done) {
+    let fileTree = [];
+    let directoryTree = []
+
+    let manifest = {
+        fileTree,
+        directoryTree
+    }
+
     fs.readdir(dir, function(err, list) {
         if (err) return done(err);
+
         var pending = list.length;
-        if (!pending) return done(null, results);
+
+        if (!pending) return done(null, manifest);
+
         list.forEach(function(file) {
-            file = path.resolve(dir, file);
-            fs.stat(file, function(err, stat) {
+            let filePath = path.resolve(dir, file);
+
+            fs.stat(filePath, function(err, stat) {
                 if (stat && stat.isDirectory()) {
-                    walk(file, function(err, res) {
-                        results = results.concat(res);
-                        if (!--pending) done(null, results);
-                    });
+
+                    let fileDetails = {
+                        fileName: file,
+                        filePath,
+                        type: 'directory',
+                        stats: {
+                            size: stat.size,
+                            atime: stat.atime,
+                            mtime: stat.mtime,
+                            birthtime: stat.birthtime
+                        },
+                        contents: []
+                    }
+
+                    let dirDetails = {
+                        fileName: file,
+                        contents: []
+                    }
+
+                    fileTree.push(fileDetails);
+                    directoryTree.push(dirDetails)
+
+                    if(depth < MAX_RECURSE_DEPTH){
+                        walk(filePath,  depth + 1, function(err, res) {
+                            fileDetails.contents = res.fileTree
+                            dirDetails.contents = res.directoryTree
+
+
+                            if (!--pending) done(null, manifest);
+                        });
+                    }else{
+                        fileDetails.contents = 'MAX_RECURSE_DEPTH_EXCEEDED'
+
+                        if (!--pending) done(null, manifest);
+                    }
+
+
+
                 } else {
-                    results.push(file);
-                    if (!--pending) done(null, results);
+
+                    let fileDetails = {
+                        fileName: file,
+                        filePath,
+                        type: mime.lookup(file),
+                        stats: {
+                            size: stat.size,
+                            atime: stat.atime,
+                            mtime: stat.mtime,
+                            birthtime: stat.birthtime
+                        }
+                    }
+
+                    fileTree.push(fileDetails);
+                    if (!--pending) done(null, manifest);
+
                 }
             });
         });
     });
 };
+
+/*
+    MAX_RECURSE_DEPTH is the hard-limit of how far deep we can go in recursion
+
+    root (0)
+        dirA (1)
+            dirA1 (2)
+                dirA11 (3)
+                dirA12 (3)
+            dirA2 (2)
+                dir21 (3)
+                dir22 (3)
+                dir23 (3)
+        dirB (1)
+            dirB1 (2)
+                dirB11 (3)
+                    dirB111 (4)
+                    dirB112 (4)
+                    dirB112 (4)
+            dirB2 (2)
+
+*/
+
+/*
+    Desired directory walk output
+
+    {
+        filename: 'a',
+        type: 'directory',
+        contents: [
+            {file},
+            {file},
+            {file},
+            {directory
+                [
+                    {file},
+                    {file}
+                ]
+            }
+            {file}
+            {file}
+            {directory
+                [
+                    {directory
+                        [
+                        }
+                    }
+                    {file}
+                ]
+            }
+        ],
+ */
 
 const walkDirectory = (dirPath) => {
 
@@ -83,6 +194,11 @@ const walkDirectory = (dirPath) => {
     }
 }
 
+// https://github.com/balena-io-modules/drivelist
+app.get('/available', (req, res, next) => {
+    res.json(process.env.AVAILABLE_ROOTS.split(','))
+})
+
 app.get('/manifest/*', (req, res, next) => {
 
     if(!req.params) res.send("No Directory")
@@ -93,12 +209,18 @@ app.get('/manifest/*', (req, res, next) => {
     let filePath = req.params[0]
 
 
-    fs.lstat(filePath, (err, stats) => {
+
+    fs.stat(filePath, (err, stats) => {
+        if(err){
+            console.log('[/manifest/*] ERR: ', err)
+            return res.status(500).send("Directory DNE")
+        }
+
 
         if(stats.isDirectory()){
 
-            walk(filePath, (err, files) => {
-                res.status(200).json({files})
+            walk(filePath, 0,(err, files) => {
+                return res.status(200).json({files})
             })
 
             // fs.readdir(filePath, (error, files) => {
@@ -139,7 +261,7 @@ app.get('/manifest/*', (req, res, next) => {
         }else{
             let type = mime.lookup(filePath)
 
-            res.status(200).json({
+            return res.status(200).json({
                 filename: filePath,
                 type
             })

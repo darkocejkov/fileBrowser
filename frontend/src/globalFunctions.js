@@ -1,4 +1,15 @@
+import axios from 'axios'
 
+export const get = (endpoint, callback) => {
+    axios.get(endpoint)
+        .then(data => {
+
+            return callback(null, data.data)
+        })
+        .catch(err => {
+            return callback(err)
+        })
+}
 
 export function getRandomInt(max, min = 1) {
     return Math.floor(Math.random() * max) + min;
