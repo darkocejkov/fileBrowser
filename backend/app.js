@@ -6,6 +6,8 @@ const mime = require('mime-types')
 const fs = require('fs')
 const path = require('path')
 
+const {faker} = require("@faker-js/faker");
+
 const app = express()
 const port = 3001
 
@@ -23,6 +25,68 @@ app.use('/serve/path/*', (req, res, next) => {
     // req.url = path.basename(req.originalUrl);
     console.log(req.params)
     express.static(req.params['0'])(req, res, next);
+})
+
+const maxDirs = 3
+
+const maxDepth = 10
+const maxFiles = 10
+const minFiles = 1
+const chanceDir = 0.7
+const chanceFile = 1 - chanceDir //0.55
+
+const genTree = (depth, done, j) => {
+
+    let i = []
+
+    let n = Math.floor(Math.random() * maxFiles)
+    // let n  = 10
+
+    for(let x = 0; x < n; x++){
+
+        let type = Math.random()
+
+        let f = {
+            fileName: '',
+            type: '',
+        }
+
+        console.log(`[genTree] ${n} @ ${j} ${type} ${depth}`)
+
+        if(type > chanceDir){
+
+
+
+            if(depth < maxDepth){
+                genTree(depth + 1, (tree) => {
+                    // console.log(i)
+                    f.type = 'directory'
+                    f.fileName = faker.system.fileName({extensionCount: 0})
+                    f.contents = tree
+                }, n)
+            }
+
+        }else{
+            f.fileName = faker.system.commonFileName()
+            f.type = faker.system.mimeType()
+        }
+
+        i.push(
+            f
+        )
+
+    }
+
+    return done(i)
+
+
+}
+app.get('/generate/manifest', (req, res, next) => {
+    genTree(0, (tree) => {
+
+        console.log(tree)
+        return res.status(200).send(tree)
+    })
 })
 
 const walk = function(dir, depth = 0, done) {

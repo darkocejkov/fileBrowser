@@ -166,13 +166,19 @@ export default function App() {
 
     }, [preview])
 
+    useEffect(() => {
+        axios.get('/generate/manifest')
+            .then(data => {
+                console.log('/generate/manifest DATA: ', data)
+
+                setManifestFiles(data.data)
+            })
+    }, [])
+
     return(
         // flex flex flex-wrap items-center gap-5
-        <div className={'min-h-screen w-screen overflow-x-clip grid grid-cols-2 bg-sky-200  p-12'}>
-
+        <div className={'min-h-screen w-screen overflow-x-clip grid grid-cols-2 gap-2 bg-sky-200  p-12'}>
             <div className={'container p-6 shadow-md h-fit'}>
-
-
                 <div className={'flex flex-col gap-6'}>
                     <div className={'flex gap-2'}>
                         <h1 className={'text-xl whitespace-nowrap'}>Server Directory</h1>
@@ -330,10 +336,7 @@ const countFiles = (folder, done) => {
                 countFiles(x.contents, (arr) => {
                     console.log('[dir]: ', {dir: x.fileName, arr})
 
-
-
                     arr.forEach(x => {
-
                         add(x, x.count)
                     })
 
