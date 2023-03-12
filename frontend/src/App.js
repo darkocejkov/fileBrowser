@@ -65,11 +65,11 @@ export default function App() {
             })
     }
 
-    const clearDirectory = () => {
+    const clearDirectory = (add = true) => {
         setManifestFiles(null)
         setManifestDirectories(null)
 
-        addDirectory(directory)
+        if(add) addDirectory(directory)
 
         setDirectory(null)
         setInputValue(null)
@@ -169,14 +169,17 @@ export default function App() {
 
     }, [preview])
 
-    useEffect(() => {
+    const randomManifest = () => {
+
+        clearDirectory(false)
+
         axios.get('/generate/manifest')
             .then(data => {
                 console.log('/generate/manifest DATA: ', data)
 
                 setManifestFiles(data.data)
             })
-    }, [])
+    }
 
     return(
         // flex flex flex-wrap items-center gap-5
@@ -191,6 +194,12 @@ export default function App() {
                         </Button>
                         <Button type={'primary'} disabled={!directory} danger onClick={() => clearDirectory()}>
                             Clear
+                        </Button>
+                    </div>
+
+                    <div className={'flex'}>
+                        <Button shape={'round'} className={'bg-orange-400'} onClick={() => randomManifest()}>
+                            Generate Random Manifest
                         </Button>
                     </div>
 
@@ -212,54 +221,79 @@ export default function App() {
 
                     <hr />
 
-                    <Spin size={'small'} spinning={!drives} tip={'Loading Drives ...'}>
-                        <Select options={drives} className={'w-full'}/>
-                    </Spin>
-                </div>
+                    <div className={'flex gap-2'}>
+                        <h1 className={'whitespace-nowrap'}>Walk Directory</h1>
 
-            </div>
+                        <div className={'w-full'}>
 
-            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
-
-                {!manifestFiles &&
-                    <Spin spinning={loadingManifest} tip={`Loading manifest for ${inputValue}`}>
-                        <Empty description={"No Manifest Loaded"} />
-                    </Spin>
-                }
-
-                <div className={'flex gap-2'}>
-
-                    <div>
-                        {manifestDirectories &&
-                            // <Tree
-                            //     showLine
-                            //     switcherIcon={<DownOutlined />}
-                            //     className={'bg-transparent w-full'}
-                            //     treeData={manifestDirectories}
-                            //     fieldNames={{
-                            //         title: 'fileName',
-                            //         children: 'contents'
-                            //     }}
-                            // />
-
-                            <ListView files={manifestDirectories}/>
-                        }
+                            <Spin size={'small'} spinning={!drives} tip={'Loading Drives ...'}>
+                                <Select options={drives} className={'w-full'}/>
+                            </Spin>
+                        </div>
                     </div>
 
                 </div>
 
-
             </div>
 
-            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md max-h-[40vh] overflow-y-scroll'}>
 
-                {manifestFiles &&
-                    <ListView files={manifestFiles} setPreview={setPreview}/>
+                {!manifestDirectories &&
+                    <Spin spinning={loadingManifest} tip={`Loading manifest for ${inputValue}`}>
+                        <Empty description={"No Directory Manifest"} />
+                    </Spin>
+                }
+
+
+                {manifestDirectories &&
+                    <div className={'flex flex-col gap-2 '}>
+                        <div className={'text-center bg-stone-200 w-full h-[2rem]'}>
+                            <h2 className={'text-xl'}>Directory Tree</h2>
+                        </div>
+
+                        <div className={'overflow-y-scroll h-fit mt-2 max-h-[80vh]'}>
+
+                            <ListView files={manifestDirectories} />
+
+                        </div>
+                    </div>
                 }
             </div>
 
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md '}>
+                <div className={'flex flex-col gap-2 '}>
+                    <div className={'text-center bg-stone-200 w-full h-[2rem]'}>
+                        <h2 className={'text-xl'}>File Tree</h2>
+                    </div>
+
+                    <div className={'overflow-y-scroll h-fit mt-2 max-h-[80vh]'}>
+                        {manifestFiles &&
+                            <ListView files={manifestFiles} setPreview={setPreview}/>
+                        }
+                    </div>
+                </div>
+            </div>
+
             <div className={'container bg-stone-200 rounded-lg p-6 shadow-md flex justify-center items-center'}>
-                {previewElement}
+                <div className={'flex flex-col gap-2'}>
+
+
+
+                    {!previewElement &&
+                        <Empty description={'No file loaded ...'}/>
+                    }
+
+                    {previewElement &&
+                        <>
+                            <div className={'text-center bg-stone-200 w-full h-[2rem]'}>
+                                <h2 className={'text-xl'}>File Preview</h2>
+                            </div>
+
+                            {previewElement}
+
+                        </>
+                    }
+                </div>
             </div>
 
 
