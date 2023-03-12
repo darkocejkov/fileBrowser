@@ -7,6 +7,7 @@ const fs = require('fs')
 const path = require('path')
 
 const {faker} = require("@faker-js/faker");
+const {exec, execFile} = require('child_process')
 
 const app = express()
 const port = 3001
@@ -51,7 +52,7 @@ const genTree = (depth, done, j) => {
             type: '',
         }
 
-        console.log(`[genTree] ${n} @ ${j} ${type} ${depth}`)
+        // console.log(`[genTree] ${n} @ ${j} ${type} ${depth}`)
 
         if(type > chanceDir){
 
@@ -84,7 +85,7 @@ const genTree = (depth, done, j) => {
 app.get('/generate/manifest', (req, res, next) => {
     genTree(0, (tree) => {
 
-        console.log(tree)
+        // console.log(tree)
         return res.status(200).send(tree)
     })
 })
@@ -264,6 +265,19 @@ app.get('/available', (req, res, next) => {
     }else{
         res.json([])
     }
+})
+
+// https://nodejs.org/docs/v8.1.4/api/child_process.html#child_process_spawning_bat_and_cmd_files_on_windows
+app.get('/video/exec/*', (req, res, next) => {
+
+   exec(`${req.params[0]}`, (err, stdout, stderr) => {
+
+       console.log(stdout)
+
+       return res.status(200)
+   })
+
+
 })
 
 app.get('/manifest/*', (req, res, next) => {

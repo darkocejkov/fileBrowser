@@ -14,7 +14,7 @@ import {
     FolderOutlined,
     VideoCameraOutlined,
     FileUnknownOutlined,
-    AimOutlined
+    AimOutlined, LogoutOutlined
 } from "@ant-design/icons";
 
 const MAX_SIZE_IMAGES = 100
@@ -107,16 +107,16 @@ export default function App() {
     useEffect(() => {
         console.log('FILES :', manifestFiles)
 
-        if(manifestFiles){
-            countFiles(manifestFiles, (arr) => {
-                console.log('COUNT: ', arr)
-            })
-
-
-            filesPerFolder(manifestFiles, (arr) => {
-                console.log('filesPerFolder: ', arr)
-            })
-        }
+        // if(manifestFiles){
+        //     countFiles(manifestFiles, (arr) => {
+        //         console.log('COUNT: ', arr)
+        //     })
+        //
+        //
+        //     filesPerFolder(manifestFiles, (arr) => {
+        //         console.log('filesPerFolder: ', arr)
+        //     })
+        // }
     }, [manifestFiles])
 
 
@@ -140,7 +140,10 @@ export default function App() {
 
             }, 2000)
         })
+
     }, [])
+
+
 
 
     const [preview, setPreview] = useState(null)
@@ -178,7 +181,7 @@ export default function App() {
     return(
         // flex flex flex-wrap items-center gap-5
         <div className={'min-h-screen w-screen overflow-x-clip grid grid-cols-2 gap-2 bg-sky-200  p-12'}>
-            <div className={'container p-6 shadow-md h-fit'}>
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md h-fit'}>
                 <div className={'flex flex-col gap-6'}>
                     <div className={'flex gap-2'}>
                         <h1 className={'text-xl whitespace-nowrap'}>Server Directory</h1>
@@ -216,7 +219,7 @@ export default function App() {
 
             </div>
 
-            <div className={'container p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
 
                 {!manifestFiles &&
                     <Spin spinning={loadingManifest} tip={`Loading manifest for ${inputValue}`}>
@@ -248,17 +251,14 @@ export default function App() {
 
             </div>
 
-            <div className={'container p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
-                {manifestFiles &&
-                    <>
-                        <ListView files={manifestFiles} setPreview={setPreview}/>
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md full h-fit max-h-[40vh] overflow-y-scroll'}>
 
-                        <Graphs />
-                    </>
+                {manifestFiles &&
+                    <ListView files={manifestFiles} setPreview={setPreview}/>
                 }
             </div>
 
-            <div className={'container p-6 shadow-md flex justify-center items-center'}>
+            <div className={'container bg-stone-200 rounded-lg p-6 shadow-md flex justify-center items-center'}>
                 {previewElement}
             </div>
 
@@ -468,6 +468,13 @@ const ListItem = ({type, fileName, filePath, onClick = null, stats, setPreview, 
 
     }
 
+    const execute = (path) => {
+        get(`/video/exec/${path}`, (err, data) => {
+            return
+        })
+    }
+
+
     const actions = (type) => {
         if(type === 'directory'){
             return null
@@ -476,9 +483,22 @@ const ListItem = ({type, fileName, filePath, onClick = null, stats, setPreview, 
         return(
             <>
 
-                <button onClick={() => setPreview(self)}>
-                    <AimOutlined className={'self-center'} />
-                </button>
+                <Tooltip title={'Preview'}>
+                    <button onClick={() => setPreview(self)}>
+                        <AimOutlined className={'self-center'} />
+                    </button>
+                </Tooltip>
+
+
+                {type && type.includes('video') &&
+                    <Tooltip title={'Open Externally'}>
+                        <button onClick={() => execute(filePath)}>
+                            <LogoutOutlined className={'self-center'} />
+                        </button>
+                    </Tooltip>
+
+
+                }
 
             </>
 
