@@ -2,7 +2,7 @@ const express = require('express')
 const bodyParser = require('body-parser');
 
 const mime = require('mime-types')
-
+const cors = require('cors')
 const fs = require('fs')
 const path = require('path')
 
@@ -15,6 +15,8 @@ const port = 3001
 const MAX_RECURSE_DEPTH = 2
 
 require('dotenv').config();
+
+app.use(cors())
 
 app.use( bodyParser.json() );       // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
@@ -127,6 +129,13 @@ const walk = function(dir, depth = 0, done) {
 
                     let dirDetails = {
                         fileName: file,
+                        type: 'directory',
+                        stats: {
+                            size: stat.size,
+                            atime: stat.atime,
+                            mtime: stat.mtime,
+                            birthtime: stat.birthtime
+                        },
                         contents: []
                     }
 
@@ -137,7 +146,6 @@ const walk = function(dir, depth = 0, done) {
                         walk(filePath,  depth + 1, function(err, res) {
                             fileDetails.contents = res.fileTree
                             dirDetails.contents = res.directoryTree
-
 
                             if (!--pending) done(null, manifest);
                         });

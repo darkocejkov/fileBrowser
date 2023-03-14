@@ -1,5 +1,16 @@
 import axios from 'axios'
 
+export const momentFullDateNumeric = 'YYYY/MM/DD, HH:mm:ss'
+
+export const fileTypesOptions = [
+    {value: 'mp4', label: 'video/mp4'},
+    {value: 'png', label: 'image/png'},
+    {value: 'jpeg', label: 'image/jpeg'},
+    {value: 'mpeg', label: 'audio/mpeg'},
+    {value: 'pdf', label: 'application/pdf'},
+]
+
+
 export const get = (endpoint, callback) => {
     axios.get(endpoint)
         .then(data => {
@@ -13,6 +24,10 @@ export const get = (endpoint, callback) => {
 
 export function getRandomInt(max, min = 1) {
     return Math.floor(Math.random() * max) + min;
+}
+
+export const getRandomMember = (array) => {
+    return array[Math.floor(Math.random() * array.length - 1)]
 }
 
 export function shuffle(array) {
@@ -47,4 +62,26 @@ export function genKey(n = 8){
 
 export function stripString(str){
     return str.replace(/[`~!@#$%^&*()|+-=?;:'",.<>{}[]\/\s]/gi,'');
+}
+
+export function humanFileSize(bytes, si=false, dp=1) {
+    const thresh = si ? 1000 : 1024;
+
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+
+    const units = si
+        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    let u = -1;
+    const r = 10**dp;
+
+    do {
+        bytes /= thresh;
+        ++u;
+    } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+
+    return bytes.toFixed(dp) + ' ' + units[u];
 }
