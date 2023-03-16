@@ -357,19 +357,13 @@ export default function App() {
 
         for(let types of fileTypesOptions) {
             let countFind = counts.find(x => x.type === types.label)
-            if(countFind){
 
-                options.push(
-                    {
-                        value: types.value,
-                        label: `${types.label} (${countFind.count})`
-                    }
-                )
-            }else{
-                options.push(
-                    types
-                )
-            }
+            options.push(
+                {
+                    value: types.value,
+                    label: `${types.label} (${countFind ? countFind.count : '0'})`
+                }
+            )
         }
 
         console.log('labelled options: ', options)
@@ -697,7 +691,7 @@ export default function App() {
                                     {chosen &&
                                         chosen.map(x => {
                                             return (
-                                                <div key={x.filePath} className={'flex-1 p-2 relative flex flex-col justify-center gap-2 items-center text-center rounded-lg text-center bg-slate-900/40 overflow-clip'}>
+                                                <div key={x.filePath} className={'flex-1 p-2 relative flex flex-col justify-center gap-2 items-center text-center rounded-lg text-center bg-indigo-500/50 overflow-clip'}>
 
                                                     {x.type.includes('image') &&
                                                             <img className={'z-0 w-full blur-xs h-full absolute top-0 left-0 object-cover opacity-20'} src={`http://localhost:3001/serve/path/${x.filePath}`}/>
